@@ -10,7 +10,7 @@ import { AnalyticsModule } from "./analytics/analytics.module";
 
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.MONGO_URI),
+    MongooseModule.forRoot(process.env.MONGO_URI || "mongodb://localhost:27017/mohri"),
     AuthModule,
     ProjectsModule,
     ArticlesModule,
