@@ -24,8 +24,8 @@
 // }
 
 
-import { Controller, Post, Body, Get, UseGuards, Request, Response } from "@nestjs/common";
-import type { Response as ExpressResponse } from "express";
+import { Controller, Post, Body, Get, UseGuards, Request, Res } from "@nestjs/common";
+import express from "express";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 
@@ -36,30 +36,56 @@ export class AuthController {
   @Post("register")
   async register(
     @Body() body: { email: string; password: string; name: string },
-    @Response() res: ExpressResponse
+    @Res({ passthrough: true }) res: express.Response
   ) {
     const result = await this.authService.register(
       body.email, 
       body.password, 
-      body.name,
-      res
+      body.name
     );
-    return res.json(result);
+    
+    // Set HTTP-only cookie
+    res.cookie("token", result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    return result;
   }
 
   @Post("login")
   async login(
     @Body() body: { email: string; password: string },
-    @Response() res: ExpressResponse
+    @Res({ passthrough: true }) res: express.Response
   ) {
-    const result = await this.authService.login(body.email, body.password, res);
-    return res.json(result);
+    const result = await this.authService.login(body.email, body.password);
+    
+    // Set HTTP-only cookie
+    res.cookie("token", result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    return result;
   }
 
   @Post("logout")
-  async logout(@Response() res: ExpressResponse) {
-    const result = this.authService.logout(res);
-    return res.json(result);
+  async logout(@Res({ passthrough: true }) res: express.Response) {
+    res.cookie("token", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    
+    return { message: "Logged out successfully" };
   }
 
   @UseGuards(JwtAuthGuard)

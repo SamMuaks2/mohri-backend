@@ -75,7 +75,6 @@ import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/co
 import { JwtService } from "@nestjs/jwt";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { Response } from "express";
 import * as bcrypt from "bcrypt";
 import { User } from "./user.schema";
 
@@ -86,7 +85,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(email: string, password: string, name: string, res: Response) {
+  async register(email: string, password: string, name: string) {
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
       throw new ConflictException("User already exists");
@@ -100,10 +99,10 @@ export class AuthService {
       role: "USER",
     });
 
-    return this.generateTokenAndSetCookie(user, res);
+    return this.generateToken(user);
   }
 
-  async login(email: string, password: string, res: Response) {
+  async login(email: string, password: string) {
     const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new UnauthorizedException("Invalid credentials");
@@ -118,10 +117,10 @@ export class AuthService {
       throw new UnauthorizedException("Account is inactive");
     }
 
-    return this.generateTokenAndSetCookie(user, res);
+    return this.generateToken(user);
   }
 
-  private generateTokenAndSetCookie(user: User, res: Response) {
+  private generateToken(user: User) {
     const payload = { 
       email: user.email, 
       sub: user._id, 
@@ -130,17 +129,8 @@ export class AuthService {
     
     const token = this.jwtService.sign(payload);
     
-    // Set HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-    
     return {
-      access_token: token, // Still send in response for flexibility
+      access_token: token,
       user: {
         id: user._id,
         email: user.email,
@@ -152,17 +142,5 @@ export class AuthService {
 
   async validateUser(email: string): Promise<any> {
     return this.userModel.findOne({ email }).select("-password");
-  }
-
-  logout(res: Response) {
-    res.cookie("token", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-      maxAge: 0,
-    });
-    
-    return { message: "Logged out successfully" };
   }
 }
