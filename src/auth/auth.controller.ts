@@ -1,4 +1,31 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from "@nestjs/common";
+// import { Controller, Post, Body, Get, UseGuards, Request } from "@nestjs/common";
+// import { AuthService } from "./auth.service";
+// import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+
+// @Controller("auth")
+// export class AuthController {
+//   constructor(private authService: AuthService) {}
+
+//   @Post("register")
+//   async register(@Body() body: { email: string; password: string; name: string }) {
+//     return this.authService.register(body.email, body.password, body.name);
+//   }
+
+//   @Post("login")
+//   async login(@Body() body: { email: string; password: string }) {
+//     return this.authService.login(body.email, body.password);
+//   }
+
+//   @UseGuards(JwtAuthGuard)
+//   @Get("profile")
+//   getProfile(@Request() req: any) {
+//     return req.user;
+//   }
+// }
+
+
+import { Controller, Post, Body, Get, UseGuards, Request, Response } from "@nestjs/common";
+import type { Response as ExpressResponse } from "express";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 
@@ -7,18 +34,46 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("register")
-  async register(@Body() body: { email: string; password: string; name: string }) {
-    return this.authService.register(body.email, body.password, body.name);
+  async register(
+    @Body() body: { email: string; password: string; name: string },
+    @Response() res: ExpressResponse
+  ) {
+    const result = await this.authService.register(
+      body.email, 
+      body.password, 
+      body.name,
+      res
+    );
+    return res.json(result);
   }
 
   @Post("login")
-  async login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
+  async login(
+    @Body() body: { email: string; password: string },
+    @Response() res: ExpressResponse
+  ) {
+    const result = await this.authService.login(body.email, body.password, res);
+    return res.json(result);
+  }
+
+  @Post("logout")
+  async logout(@Response() res: ExpressResponse) {
+    const result = this.authService.logout(res);
+    return res.json(result);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get("profile")
   getProfile(@Request() req: any) {
     return req.user;
+  }
+
+  @Get("check")
+  @UseGuards(JwtAuthGuard)
+  checkAuth(@Request() req: any) {
+    return { 
+      authenticated: true,
+      user: req.user 
+    };
   }
 }
