@@ -10,10 +10,22 @@ export class ProjectsService {
   ) {}
 
   findAll() {
-    return this.model.find();
+    return this.model.find().sort({ createdAt: -1 });
+  }
+
+  findOne(id: string) {
+    return this.model.findById(id);
   }
 
   create(data: any) {
     return this.model.create(data);
+  }
+
+  update(id: string, data: any) {
+    return this.model.findByIdAndUpdate(id, data, { new: true });
+  }
+
+  delete(id: string) {
+    return this.model.findByIdAndDelete(id);
   }
 }
