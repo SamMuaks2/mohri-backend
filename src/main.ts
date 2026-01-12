@@ -64,6 +64,7 @@ async function bootstrap() {
       const allowedOrigins = [
         "http://localhost:3000", 
         "http://localhost:3001",
+        "https://mohri-frontend.vercel.app",
         frontendUrl,
         "https://mohri-admin.vercel.app"
       ].filter(Boolean);
