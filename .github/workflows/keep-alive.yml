@@ -11,34 +11,58 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Ping Backend
+      - name: Ping Root Endpoint
         run: |
-          echo "Pinging backend at $(date)"
+          echo "🔄 Pinging backend at $(date)"
           
-          # Replace with your actual Render backend URL
           BACKEND_URL="${{ secrets.BACKEND_URL }}"
           
           # Ping the root endpoint
           response=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL")
           
           if [ $response -eq 200 ]; then
-            echo "✅ Backend is alive! Status code: $response"
+            echo "✅ Root endpoint alive! Status code: $response"
           else
-            echo "⚠️ Backend responded with status code: $response"
+            echo "⚠️ Root endpoint responded with status code: $response"
           fi
           
       - name: Ping Health Check Endpoint
         run: |
-          # If you have a health endpoint, ping it too
+          echo "🏥 Checking health endpoint..."
+          
           BACKEND_URL="${{ secrets.BACKEND_URL }}"
           
-          # Try the root endpoint
-          curl -s "$BACKEND_URL" || echo "Root endpoint pinged"
+          # Ping the health endpoint and capture response
+          response=$(curl -s "$BACKEND_URL/health")
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/health")
           
-          # You can add more endpoints if needed
-          # curl -s "$BACKEND_URL/api/health" || echo "Health endpoint pinged"
+          if [ $status_code -eq 200 ]; then
+            echo "✅ Health check passed! Status code: $status_code"
+            echo "📊 Response: $response"
+          else
+            echo "⚠️ Health check responded with status code: $status_code"
+          fi
+        continue-on-error: true
+
+      - name: Ping API Health Endpoint
+        run: |
+          echo "🔍 Checking API health endpoint..."
+          
+          BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          
+          # Ping the API health endpoint
+          response=$(curl -s "$BACKEND_URL/api/health")
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/health")
+          
+          if [ $status_code -eq 200 ]; then
+            echo "✅ API health check passed! Status code: $status_code"
+            echo "📊 Response: $response"
+          else
+            echo "⚠️ API health check responded with status code: $status_code"
+          fi
         continue-on-error: true
 
       - name: Log Completion
         run: |
-          echo "Backend keep-alive ping completed at $(date)"
+          echo "🎉 Backend keep-alive ping completed at $(date)"
+          echo "⏰ Next ping in 12 minutes"

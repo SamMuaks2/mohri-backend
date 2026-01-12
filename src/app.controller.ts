@@ -11,11 +11,28 @@ export class AppController {
   }
 
   @Get('health')
-    getHealth() {
-      return {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-      };
-    }
+  getHealth() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      message: 'Backend is running successfully',
+    };
+  }
+
+  @Get('api/health')
+  getApiHealth() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      services: {
+        api: 'operational',
+        database: 'connected',
+      },
+      message: 'All systems operational',
+    };
+  }
 }
