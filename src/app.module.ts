@@ -9,6 +9,8 @@ import { CertificationsModule } from "./certifications/certifications.module";
 import { MessagesModule } from "./messages/messages.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { SettingsModule } from "./settings/settings.module";
+import { EmailModule } from "./email/email.module";
+
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { SettingsModule } from "./settings/settings.module";
     ExperienceModule,
     CertificationsModule,
     MessagesModule,
+    EmailModule,
     AnalyticsModule,
     SettingsModule,
   ],
