@@ -3,7 +3,7 @@ name: Keep Backend Alive
 on:
   schedule:
     # Run every 10 minutes (Render free tier spins down after 15 min of inactivity)
-    - cron: '*/10 * * * *'
+    - cron: '*/12 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
