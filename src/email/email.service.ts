@@ -160,33 +160,159 @@
 // ===========
 // SendGrid
 // ===========
+// import { Injectable } from '@nestjs/common';
+// import sgMail from '@sendgrid/mail';
+
+// @Injectable()
+// export class EmailService {
+//   constructor() {
+//     const apiKey = process.env.SENDGRID_API_KEY;
+    
+//     if (!apiKey) {
+//       console.error('❌ SENDGRID_API_KEY is not set');
+//       throw new Error('SENDGRID_API_KEY environment variable is required');
+//     }
+    
+//     sgMail.setApiKey(apiKey);
+    
+//     console.log('📧 SendGrid Email Service initialized');
+//     console.log('   From Email:', process.env.SENDGRID_FROM_EMAIL);
+//   }
+
+//   async sendReply(to: string, subject: string, message: string, originalMessage?: string) {
+//     try {
+//       const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+//       const senderName = process.env.SENDER_NAME || 'Mohri Admin';
+      
+//       if (!fromEmail) {
+//         throw new Error('SENDGRID_FROM_EMAIL environment variable is required');
+//       }
+
+//       const emailBody = `
+// ${message}
+
+// ${originalMessage ? `
+// ---
+// Original Message:
+// ${originalMessage}
+// ` : ''}
+
+// Best regards,
+// ${senderName}
+//       `.trim();
+
+//       const msg = {
+//         to: to,
+//         from: {
+//           email: fromEmail,
+//           name: senderName,
+//         },
+//         subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
+//         text: emailBody,
+//         html: `
+//           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+//             <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
+            
+//             ${originalMessage ? `
+//             <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+//             <p style="color: #666; font-size: 14px;"><strong>Original Message:</strong></p>
+//             <p style="color: #666; font-size: 14px; white-space: pre-wrap;">${originalMessage.replace(/\n/g, '<br>')}</p>
+//             ` : ''}
+            
+//             <p style="margin-top: 20px;">Best regards,<br>${senderName}</p>
+//           </div>
+//         `,
+//       };
+
+//       const response = await sgMail.send(msg);
+      
+//       console.log('✅ Email sent successfully via SendGrid');
+//       console.log('   Status:', response[0].statusCode);
+//       console.log('   To:', to);
+      
+//       return { 
+//         success: true, 
+//         messageId: response[0].headers['x-message-id'],
+//         statusCode: response[0].statusCode 
+//       };
+//     } catch (error) {
+//       console.error('❌ SendGrid Error:', error);
+      
+//       if (error.response) {
+//         console.error('   Status:', error.response.statusCode);
+//         console.error('   Body:', error.response.body);
+//       }
+      
+//       throw new Error(`Failed to send email: ${error.message}`);
+//     }
+//   }
+
+//   async verifyConnection() {
+//     try {
+//       const apiKey = process.env.SENDGRID_API_KEY;
+//       const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+      
+//       if (!apiKey) {
+//         throw new Error('SENDGRID_API_KEY is not set');
+//       }
+      
+//       if (!fromEmail) {
+//         throw new Error('SENDGRID_FROM_EMAIL is not set');
+//       }
+      
+//       console.log('✅ SendGrid API key configured');
+//       console.log('✅ From email configured:', fromEmail);
+//       console.log('⚠️  Note: Verify your sender email at sendgrid.com/sender_verification');
+      
+//       return true;
+//     } catch (error) {
+//       console.error('❌ SendGrid configuration failed:', error);
+//       return false;
+//     }
+//   }
+// }
+
+
+// ==============
+// Mailer Send
+// ==============
 import { Injectable } from '@nestjs/common';
-import sgMail from '@sendgrid/mail';
+import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
 
 @Injectable()
 export class EmailService {
+  private mailerSend: MailerSend;
+  private fromEmail: Sender;
+
   constructor() {
-    const apiKey = process.env.SENDGRID_API_KEY;
+    const apiKey = process.env.MAILERSEND_API_KEY;
     
     if (!apiKey) {
-      console.error('❌ SENDGRID_API_KEY is not set');
-      throw new Error('SENDGRID_API_KEY environment variable is required');
+      console.error('❌ MAILERSEND_API_KEY is not set');
+      throw new Error('MAILERSEND_API_KEY environment variable is required');
     }
     
-    sgMail.setApiKey(apiKey);
+    this.mailerSend = new MailerSend({
+      apiKey: apiKey,
+    });
+
+    const fromEmailAddress = process.env.MAILERSEND_FROM_EMAIL;
+    const senderName = process.env.SENDER_NAME || 'Mohri Admin';
     
-    console.log('📧 SendGrid Email Service initialized');
-    console.log('   From Email:', process.env.SENDGRID_FROM_EMAIL);
+    if (!fromEmailAddress) {
+      throw new Error('MAILERSEND_FROM_EMAIL environment variable is required');
+    }
+
+    this.fromEmail = new Sender(fromEmailAddress, senderName);
+    
+    console.log('📧 MailerSend Email Service initialized');
+    console.log('   From Email:', fromEmailAddress);
+    console.log('   Sender Name:', senderName);
   }
 
   async sendReply(to: string, subject: string, message: string, originalMessage?: string) {
     try {
-      const fromEmail = process.env.SENDGRID_FROM_EMAIL;
       const senderName = process.env.SENDER_NAME || 'Mohri Admin';
-      
-      if (!fromEmail) {
-        throw new Error('SENDGRID_FROM_EMAIL environment variable is required');
-      }
 
       const emailBody = `
 ${message}
@@ -201,42 +327,42 @@ Best regards,
 ${senderName}
       `.trim();
 
-      const msg = {
-        to: to,
-        from: {
-          email: fromEmail,
-          name: senderName,
-        },
-        subject: subject.startsWith('Re:') ? subject : `Re: ${subject}`,
-        text: emailBody,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
-            
-            ${originalMessage ? `
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
-            <p style="color: #666; font-size: 14px;"><strong>Original Message:</strong></p>
-            <p style="color: #666; font-size: 14px; white-space: pre-wrap;">${originalMessage.replace(/\n/g, '<br>')}</p>
-            ` : ''}
-            
-            <p style="margin-top: 20px;">Best regards,<br>${senderName}</p>
-          </div>
-        `,
-      };
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
+          
+          ${originalMessage ? `
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+          <p style="color: #666; font-size: 14px;"><strong>Original Message:</strong></p>
+          <p style="color: #666; font-size: 14px; white-space: pre-wrap;">${originalMessage.replace(/\n/g, '<br>')}</p>
+          ` : ''}
+          
+          <p style="margin-top: 20px;">Best regards,<br>${senderName}</p>
+        </div>
+      `;
 
-      const response = await sgMail.send(msg);
+      const recipients = [new Recipient(to)];
+
+      const emailParams = new EmailParams()
+        .setFrom(this.fromEmail)
+        .setTo(recipients)
+        .setSubject(subject.startsWith('Re:') ? subject : `Re: ${subject}`)
+        .setText(emailBody)
+        .setHtml(htmlBody);
+
+      const response = await this.mailerSend.email.send(emailParams);
       
-      console.log('✅ Email sent successfully via SendGrid');
-      console.log('   Status:', response[0].statusCode);
+      console.log('✅ Email sent successfully via MailerSend');
       console.log('   To:', to);
+      console.log('   Subject:', subject);
       
       return { 
         success: true, 
-        messageId: response[0].headers['x-message-id'],
-        statusCode: response[0].statusCode 
+        messageId: response.headers?.['x-message-id'] || 'sent',
+        response: response.statusCode 
       };
     } catch (error) {
-      console.error('❌ SendGrid Error:', error);
+      console.error('❌ MailerSend Error:', error);
       
       if (error.response) {
         console.error('   Status:', error.response.statusCode);
@@ -249,24 +375,24 @@ ${senderName}
 
   async verifyConnection() {
     try {
-      const apiKey = process.env.SENDGRID_API_KEY;
-      const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+      const apiKey = process.env.MAILERSEND_API_KEY;
+      const fromEmail = process.env.MAILERSEND_FROM_EMAIL;
       
       if (!apiKey) {
-        throw new Error('SENDGRID_API_KEY is not set');
+        throw new Error('MAILERSEND_API_KEY is not set');
       }
       
       if (!fromEmail) {
-        throw new Error('SENDGRID_FROM_EMAIL is not set');
+        throw new Error('MAILERSEND_FROM_EMAIL is not set');
       }
       
-      console.log('✅ SendGrid API key configured');
+      console.log('✅ MailerSend API key configured');
       console.log('✅ From email configured:', fromEmail);
-      console.log('⚠️  Note: Verify your sender email at sendgrid.com/sender_verification');
+      console.log('⚠️  Note: Verify your domain at mailersend.com/domains');
       
       return true;
     } catch (error) {
-      console.error('❌ SendGrid configuration failed:', error);
+      console.error('❌ MailerSend configuration failed:', error);
       return false;
     }
   }
