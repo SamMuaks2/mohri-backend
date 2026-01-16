@@ -1,43 +1,3 @@
-// import { Injectable } from "@nestjs/common";
-// import { InjectModel } from "@nestjs/mongoose";
-// import { Model } from "mongoose";
-// import { Analytics } from "./analytics.schema";
-
-// @Injectable()
-// export class AnalyticsService {
-//   constructor(
-//     @InjectModel(Analytics.name) private model: Model<Analytics>,
-//   ) {}
-
-//   findAll() {
-//     return this.model.find().sort({ createdAt: -1 });
-//   }
-
-//   findByPage(page: string) {
-//     return this.model.find({ page }).sort({ createdAt: -1 });
-//   }
-
-//   create(data: any) {
-//     return this.model.create(data);
-//   }
-
-//   getStats() {
-//     return this.model.aggregate([
-//       {
-//         $group: {
-//           _id: "$page",
-//           count: { $sum: 1 },
-//         },
-//       },
-//       {
-//         $sort: { count: -1 },
-//       },
-//     ]);
-//   }
-// }
-
-
-
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -79,7 +39,7 @@ export class AnalyticsService {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    // Get daily stats for the past week
+    // Getting daily stats for the past week
     const dailyStats = await this.model.aggregate([
       {
         $match: {
@@ -100,7 +60,7 @@ export class AnalyticsService {
       },
     ]);
 
-    // Get top pages for the week
+    // Getting top pages for the week
     const topPages = await this.model.aggregate([
       {
         $match: {
@@ -121,17 +81,17 @@ export class AnalyticsService {
       },
     ]);
 
-    // Get total views this week
+    // Getting total views this week
     const totalViews = await this.model.countDocuments({
       createdAt: { $gte: oneWeekAgo },
     });
 
-    // Get unique pages visited
+    // Getting unique pages visited
     const uniquePages = await this.model.distinct("page", {
       createdAt: { $gte: oneWeekAgo },
     });
 
-    // Compare with previous week
+    // Comparing with previous week
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
@@ -158,7 +118,7 @@ export class AnalyticsService {
   }
 
   private formatDailyStats(stats: any[]) {
-    // Group by date and sum all page views for each day
+    // Grouping by date and sum all page views for each day
     const dailyTotals = stats.reduce((acc, stat) => {
       const date = stat._id.date;
       if (!acc[date]) {
@@ -193,7 +153,7 @@ export class AnalyticsService {
       },
     ]);
 
-    // Get stats by referrer
+    // Getting stats by referrer
     const referrerStats = await this.model.aggregate([
       {
         $group: {
