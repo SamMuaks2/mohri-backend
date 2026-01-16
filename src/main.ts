@@ -168,21 +168,22 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, document);
 
-  // Testing MailerSend configuration on startup
+  // Testing Brevo configuration on startup
   try {
     const emailService = app.get(EmailService);
     const isConnected = await emailService.verifyConnection();
     
     if (isConnected) {
-      console.log('✅ MailerSend API configured successfully');
-      console.log(`📧 Emails will be sent from: ${process.env.MAILERSEND_FROM_EMAIL}`);
+      console.log('✅ Brevo API configured successfully');
+      console.log(`📧 Emails will be sent from: ${process.env.SENDER_EMAIL}`);
     } else {
-      console.warn('⚠️ MailerSend API configuration failed - check your API key');
+      console.warn('⚠️ Brevo API configuration failed - check your API key');
     }
   } catch (error) {
     console.error('❌ Email service initialization error:', error.message);
     console.warn('⚠️ Application will start but email functionality may not work');
   }
+
 
   const port = process.env.PORT || 4000;
   await app.listen(port);

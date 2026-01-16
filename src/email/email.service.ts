@@ -276,43 +276,163 @@
 // ==============
 // Mailer Send
 // ==============
+// import { Injectable } from '@nestjs/common';
+// import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
+
+// @Injectable()
+// export class EmailService {
+//   private mailerSend: MailerSend;
+//   private fromEmail: Sender;
+
+//   constructor() {
+//     const apiKey = process.env.MAILERSEND_API_KEY;
+    
+//     if (!apiKey) {
+//       console.error('❌ MAILERSEND_API_KEY is not set');
+//       throw new Error('MAILERSEND_API_KEY environment variable is required');
+//     }
+    
+//     this.mailerSend = new MailerSend({
+//       apiKey: apiKey,
+//     });
+
+//     const fromEmailAddress = process.env.MAILERSEND_FROM_EMAIL;
+//     const senderName = process.env.SENDER_NAME || 'Mohri Admin';
+    
+//     if (!fromEmailAddress) {
+//       throw new Error('MAILERSEND_FROM_EMAIL environment variable is required');
+//     }
+
+//     this.fromEmail = new Sender(fromEmailAddress, senderName);
+    
+//     console.log('📧 MailerSend Email Service initialized');
+//     console.log('   From Email:', fromEmailAddress);
+//     console.log('   Sender Name:', senderName);
+//   }
+
+//   async sendReply(to: string, subject: string, message: string, originalMessage?: string) {
+//     try {
+//       const senderName = process.env.SENDER_NAME || 'Mohri Admin';
+
+//       const emailBody = `
+// ${message}
+
+// ${originalMessage ? `
+// ---
+// Original Message:
+// ${originalMessage}
+// ` : ''}
+
+// Best regards,
+// ${senderName}
+//       `.trim();
+
+//       const htmlBody = `
+//         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+//           <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
+          
+//           ${originalMessage ? `
+//           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+//           <p style="color: #666; font-size: 14px;"><strong>Original Message:</strong></p>
+//           <p style="color: #666; font-size: 14px; white-space: pre-wrap;">${originalMessage.replace(/\n/g, '<br>')}</p>
+//           ` : ''}
+          
+//           <p style="margin-top: 20px;">Best regards,<br>${senderName}</p>
+//         </div>
+//       `;
+
+//       const recipients = [new Recipient(to)];
+
+//       const emailParams = new EmailParams()
+//         .setFrom(this.fromEmail)
+//         .setTo(recipients)
+//         .setSubject(subject.startsWith('Re:') ? subject : `Re: ${subject}`)
+//         .setText(emailBody)
+//         .setHtml(htmlBody);
+
+//       const response = await this.mailerSend.email.send(emailParams);
+      
+//       console.log('✅ Email sent successfully via MailerSend');
+//       console.log('   To:', to);
+//       console.log('   Subject:', subject);
+      
+//       return { 
+//         success: true, 
+//         messageId: response.headers?.['x-message-id'] || 'sent',
+//         response: response.statusCode 
+//       };
+//     } catch (error) {
+//       console.error('❌ MailerSend Error:', error);
+      
+//       if (error.response) {
+//         console.error('   Status:', error.response.statusCode);
+//         console.error('   Body:', error.response.body);
+//       }
+      
+//       throw new Error(`Failed to send email: ${error.message}`);
+//     }
+//   }
+
+//   async verifyConnection() {
+//     try {
+//       const apiKey = process.env.MAILERSEND_API_KEY;
+//       const fromEmail = process.env.MAILERSEND_FROM_EMAIL;
+      
+//       if (!apiKey) {
+//         throw new Error('MAILERSEND_API_KEY is not set');
+//       }
+      
+//       if (!fromEmail) {
+//         throw new Error('MAILERSEND_FROM_EMAIL is not set');
+//       }
+      
+//       console.log('✅ MailerSend API key configured');
+//       console.log('✅ From email configured:', fromEmail);
+//       console.log('⚠️  Note: Verify your domain at mailersend.com/domains');
+      
+//       return true;
+//     } catch (error) {
+//       console.error('❌ MailerSend configuration failed:', error);
+//       return false;
+//     }
+//   }
+// }
+
+
+
+
+// =============
+//    Brevo
+// =============
 import { Injectable } from '@nestjs/common';
-import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
+import * as SibApiV3Sdk from '@sendinblue/client';
 
 @Injectable()
 export class EmailService {
-  private mailerSend: MailerSend;
-  private fromEmail: Sender;
+  private apiInstance: SibApiV3Sdk.TransactionalEmailsApi;
 
   constructor() {
-    const apiKey = process.env.MAILERSEND_API_KEY;
+    const apiKey = process.env.BREVO_API_KEY;
     
     if (!apiKey) {
-      console.error('❌ MAILERSEND_API_KEY is not set');
-      throw new Error('MAILERSEND_API_KEY environment variable is required');
-    }
-    
-    this.mailerSend = new MailerSend({
-      apiKey: apiKey,
-    });
-
-    const fromEmailAddress = process.env.MAILERSEND_FROM_EMAIL;
-    const senderName = process.env.SENDER_NAME || 'Mohri Admin';
-    
-    if (!fromEmailAddress) {
-      throw new Error('MAILERSEND_FROM_EMAIL environment variable is required');
+      console.error('❌ BREVO_API_KEY is not set');
+      throw new Error('BREVO_API_KEY environment variable is required');
     }
 
-    this.fromEmail = new Sender(fromEmailAddress, senderName);
+    // Initializing Brevo API client
+    this.apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    this.apiInstance.setApiKey(
+      SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+      apiKey
+    );
     
-    console.log('📧 MailerSend Email Service initialized');
-    console.log('   From Email:', fromEmailAddress);
-    console.log('   Sender Name:', senderName);
+    console.log('📧 Brevo Email Service initialized');
   }
 
   async sendReply(to: string, subject: string, message: string, originalMessage?: string) {
     try {
-      const senderName = process.env.SENDER_NAME || 'Mohri Admin';
+      const senderName = process.env.SENDER_NAME || 'Mohri Muakpo';
+      const senderEmail = process.env.SENDER_EMAIL || 'noreply@example.com';
 
       const emailBody = `
 ${message}
@@ -328,44 +448,50 @@ ${senderName}
       `.trim();
 
       const htmlBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <p style="white-space: pre-wrap; color: #333;">${message.replace(/\n/g, '<br>')}</p>
           
           ${originalMessage ? `
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
           <p style="color: #666; font-size: 14px;"><strong>Original Message:</strong></p>
-          <p style="color: #666; font-size: 14px; white-space: pre-wrap;">${originalMessage.replace(/\n/g, '<br>')}</p>
+          <p style="color: #666; font-size: 14px; white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;">
+            ${originalMessage.replace(/\n/g, '<br>')}
+          </p>
           ` : ''}
           
-          <p style="margin-top: 20px;">Best regards,<br>${senderName}</p>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="margin: 0; color: #666;">Best regards,<br><strong>${senderName}</strong></p>
+          </div>
         </div>
       `;
 
-      const recipients = [new Recipient(to)];
-
-      const emailParams = new EmailParams()
-        .setFrom(this.fromEmail)
-        .setTo(recipients)
-        .setSubject(subject.startsWith('Re:') ? subject : `Re: ${subject}`)
-        .setText(emailBody)
-        .setHtml(htmlBody);
-
-      const response = await this.mailerSend.email.send(emailParams);
+      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
       
-      console.log('✅ Email sent successfully via MailerSend');
+      sendSmtpEmail.sender = {
+        name: senderName,
+        email: senderEmail
+      };
+      
+      sendSmtpEmail.to = [{ email: to }];
+      sendSmtpEmail.subject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
+      sendSmtpEmail.textContent = emailBody;
+      sendSmtpEmail.htmlContent = htmlBody;
+
+      const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      
+      console.log('✅ Email sent successfully via Brevo');
+      console.log('   Message ID:', response.body?.messageId || 'sent');
       console.log('   To:', to);
-      console.log('   Subject:', subject);
       
       return { 
         success: true, 
-        messageId: response.headers?.['x-message-id'] || 'sent',
-        response: response.statusCode 
+        messageId: response.body?.messageId || 'sent'
       };
     } catch (error) {
-      console.error('❌ MailerSend Error:', error);
+      console.error('❌ Brevo Error:', error);
       
       if (error.response) {
-        console.error('   Status:', error.response.statusCode);
+        console.error('   Status:', error.response.status);
         console.error('   Body:', error.response.body);
       }
       
@@ -375,24 +501,28 @@ ${senderName}
 
   async verifyConnection() {
     try {
-      const apiKey = process.env.MAILERSEND_API_KEY;
-      const fromEmail = process.env.MAILERSEND_FROM_EMAIL;
+      const apiKey = process.env.BREVO_API_KEY;
       
       if (!apiKey) {
-        throw new Error('MAILERSEND_API_KEY is not set');
+        throw new Error('BREVO_API_KEY is not set');
       }
       
-      if (!fromEmail) {
-        throw new Error('MAILERSEND_FROM_EMAIL is not set');
-      }
+      // Test the API by getting account info
+      const accountApi = new SibApiV3Sdk.AccountApi();
+      accountApi.setApiKey(
+        SibApiV3Sdk.AccountApiApiKeys.apiKey,
+        apiKey
+      );
       
-      console.log('✅ MailerSend API key configured');
-      console.log('✅ From email configured:', fromEmail);
-      console.log('⚠️  Note: Verify your domain at mailersend.com/domains');
+      await accountApi.getAccount();
+      
+      console.log('✅ Brevo API key verified');
+      console.log('✅ Ready to send emails');
+      console.log('⚠️  Note: Brevo free tier allows 300 emails/day');
       
       return true;
     } catch (error) {
-      console.error('❌ MailerSend configuration failed:', error);
+      console.error('❌ Brevo configuration failed:', error);
       return false;
     }
   }
